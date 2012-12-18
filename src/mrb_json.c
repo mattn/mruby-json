@@ -5,6 +5,19 @@
 #include <stdio.h>
 #include "parson.h"
 
+#if 1
+#define ARENA_SAVE \
+  int ai = mrb_gc_arena_save(mrb); \
+  if (ai == MRB_ARENA_SIZE) { \
+    mrb_raise(mrb, E_RUNTIME_ERROR, "arena overflow"); \
+  }
+#define ARENA_RESTORE \
+  mrb_gc_arena_restore(mrb, ai);
+#else
+#define ARENA_SAVE
+#define ARENA_RESTORE
+#endif
+
 static struct RClass *_class_json;
 
 /*********************************************************
@@ -13,18 +26,22 @@ static struct RClass *_class_json;
 
 static mrb_value
 mrb_value_to_string(mrb_state* mrb, mrb_value value) {
+  mrb_value str;
+  ARENA_SAVE;
   switch (mrb_type(value)) {
   case MRB_TT_FIXNUM:
   case MRB_TT_FLOAT:
   case MRB_TT_TRUE:
   case MRB_TT_FALSE:
   case MRB_TT_UNDEF:
-    return mrb_funcall(mrb, value, "to_s", 0, NULL);
+    str = mrb_funcall(mrb, value, "to_s", 0, NULL);
+    break;
   case MRB_TT_STRING:
-    return mrb_funcall(mrb, value, "inspect", 0, NULL);
+    str = mrb_funcall(mrb, value, "inspect", 0, NULL);
+    break;
   case MRB_TT_HASH:
     {
-      mrb_value str = mrb_str_new_cstr(mrb, "{");
+      str = mrb_str_new_cstr(mrb, "{");
       mrb_value keys = mrb_hash_keys(mrb, value);
       int n, l = RARRAY_LEN(keys);
       for (n = 0; n < l; n++) {
@@ -38,9 +55,10 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
         if (n != l - 1) {
           mrb_str_cat2(mrb, str, ",");
         }
+        ARENA_RESTORE;
       }
       mrb_str_cat2(mrb, str, "}");
-      return str;
+      break;
     }
   case MRB_TT_ARRAY:
     {
@@ -52,18 +70,21 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
         if (n != l - 1) {
           mrb_str_cat2(mrb, str, ",");
         }
+        ARENA_RESTORE;
       }
       mrb_str_cat2(mrb, str, "]");
-      return str;
+      break;
     }
   default:
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
   }
-  return mrb_false_value();
+  ARENA_RESTORE;
+  return str;
 }
 
 static mrb_value
 json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
+  ARENA_SAVE;
   switch (json_value_get_type(value)) {
   case JSONError:
   case JSONNull:
@@ -103,6 +124,8 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       return mrb_true_value();
     }
     return mrb_false_value();
+  default:
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
   }
   return mrb_nil_value();
 }
@@ -121,7 +144,9 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid json");
   }
 
-  return json_value_to_mrb_value(mrb, root_value);
+  mrb_value value = json_value_to_mrb_value(mrb, root_value);
+  json_value_free(root_value);
+  return value;
 }
 
 static mrb_value
