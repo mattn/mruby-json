@@ -28,16 +28,16 @@ static mrb_value
 mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   mrb_value str;
   ARENA_SAVE;
+
+  if (mrb_nil_p(value)) {
+    return mrb_str_new2(mrb, "null");
+  }
+
   switch (mrb_type(value)) {
   case MRB_TT_FIXNUM:
   case MRB_TT_FLOAT:
   case MRB_TT_TRUE:
   case MRB_TT_FALSE:
-    {
-      if (!value.value.i) {
-        return mrb_str_new2(mrb, "null");
-      }
-    }
   case MRB_TT_UNDEF:
     str = mrb_funcall(mrb, value, "to_s", 0, NULL);
     break;
