@@ -67,7 +67,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     }
   case MRB_TT_ARRAY:
     {
-      mrb_value str = mrb_str_new_cstr(mrb, "[");
+      str = mrb_str_new_cstr(mrb, "[");
       int n, l = RARRAY_LEN(value);
       for (n = 0; n < l; n++) {
         mrb_value obj = mrb_ary_entry(value, n);
