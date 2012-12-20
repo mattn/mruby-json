@@ -90,14 +90,18 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
 static mrb_value
 json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
   ARENA_SAVE;
+  mrb_value ret;
   switch (json_value_get_type(value)) {
   case JSONError:
   case JSONNull:
-    return mrb_nil_value();
+    ret = mrb_nil_value();
+    break;
   case JSONString:
-    return mrb_str_new_cstr(mrb, json_value_get_string(value));
+    ret = mrb_str_new_cstr(mrb, json_value_get_string(value));
+    break;
   case JSONNumber:
-    return mrb_float_value(json_value_get_number(value));
+    ret = mrb_float_value(json_value_get_number(value));
+    break;
   case JSONObject:
     {
       mrb_value hash = mrb_hash_new(mrb);
@@ -109,8 +113,9 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
         mrb_hash_set(mrb, hash, mrb_str_new_cstr(mrb, name),
           json_value_to_mrb_value(mrb, json_object_get_value(object, name)));
       }
-      return hash;
+      ret = hash;
     }
+    break;
   case JSONArray:
     {
       mrb_value ary;
@@ -122,22 +127,26 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
         JSON_Value* elem = json_array_get_value(array, n);
         mrb_ary_push(mrb, ary, json_value_to_mrb_value(mrb, elem));
       }
-      return ary;
+      ret = ary;
     }
+    break;
   case JSONBoolean:
-    if (json_value_get_boolean(value)) {
-      return mrb_true_value();
-    }
-    return mrb_false_value();
+    if (json_value_get_boolean(value))
+      ret = mrb_true_value();
+    else
+      ret = mrb_false_value();
+    break;
   default:
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
   }
-  return mrb_nil_value();
+  ARENA_RESTORE;
+  return ret;
 }
 
 static mrb_value
 mrb_json_parse(mrb_state *mrb, mrb_value self)
 {
+  ARENA_SAVE;
   mrb_value json = mrb_nil_value();
   mrb_get_args(mrb, "o", &json);
   if (!mrb_string_p(json)) {
@@ -151,6 +160,7 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
 
   mrb_value value = json_value_to_mrb_value(mrb, root_value);
   json_value_free(root_value);
+  ARENA_RESTORE;
   return value;
 }
 
