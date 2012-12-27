@@ -112,6 +112,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
         const char* name = json_object_get_name(object, n);
         mrb_hash_set(mrb, hash, mrb_str_new_cstr(mrb, name),
           json_value_to_mrb_value(mrb, json_object_get_value(object, name)));
+        ARENA_RESTORE;
       }
       ret = hash;
     }
@@ -126,6 +127,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       for (n = 0; n < count; n++) {
         JSON_Value* elem = json_array_get_value(array, n);
         mrb_ary_push(mrb, ary, json_value_to_mrb_value(mrb, elem));
+        ARENA_RESTORE;
       }
       ret = ary;
     }
