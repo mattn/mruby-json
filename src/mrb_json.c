@@ -25,7 +25,6 @@
 static mrb_value
 mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   mrb_value str;
-  ARENA_SAVE;
 
   if (mrb_nil_p(value)) {
     return mrb_str_new2(mrb, "null");
@@ -48,6 +47,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
       mrb_value keys = mrb_hash_keys(mrb, value);
       int n, l = RARRAY_LEN(keys);
       for (n = 0; n < l; n++) {
+        int ai = mrb_gc_arena_save(mrb);
         mrb_value key = mrb_ary_entry(keys, n);
         mrb_value enckey = mrb_funcall(mrb, key, "to_s", 0, NULL);
         enckey = mrb_funcall(mrb, enckey, "inspect", 0, NULL);
@@ -58,7 +58,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
         if (n != l - 1) {
           mrb_str_cat2(mrb, str, ",");
         }
-        ARENA_RESTORE;
+        mrb_gc_arena_restore(mrb, ai);
       }
       mrb_str_cat2(mrb, str, "}");
       break;
@@ -68,12 +68,13 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
       str = mrb_str_new_cstr(mrb, "[");
       int n, l = RARRAY_LEN(value);
       for (n = 0; n < l; n++) {
+        int ai = mrb_gc_arena_save(mrb);
         mrb_value obj = mrb_ary_entry(value, n);
         mrb_str_concat(mrb, str, mrb_value_to_string(mrb, obj));
         if (n != l - 1) {
           mrb_str_cat2(mrb, str, ",");
         }
-        ARENA_RESTORE;
+        mrb_gc_arena_restore(mrb, ai);
       }
       mrb_str_cat2(mrb, str, "]");
       break;
@@ -81,13 +82,11 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   default:
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
   }
-  ARENA_RESTORE;
   return str;
 }
 
 static mrb_value
 json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
-  ARENA_SAVE;
   mrb_value ret;
   switch (json_value_get_type(value)) {
   case JSONError:
@@ -107,10 +106,11 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       size_t count = json_object_get_count(object);
       int n;
       for (n = 0; n < count; n++) {
+        int ai = mrb_gc_arena_save(mrb);
         const char* name = json_object_get_name(object, n);
         mrb_hash_set(mrb, hash, mrb_str_new_cstr(mrb, name),
           json_value_to_mrb_value(mrb, json_object_get_value(object, name)));
-        ARENA_RESTORE;
+        mrb_gc_arena_restore(mrb, ai);
       }
       ret = hash;
     }
@@ -123,9 +123,10 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       size_t count = json_array_get_count(array);
       int n;
       for (n = 0; n < count; n++) {
+        int ai = mrb_gc_arena_save(mrb);
         JSON_Value* elem = json_array_get_value(array, n);
         mrb_ary_push(mrb, ary, json_value_to_mrb_value(mrb, elem));
-        ARENA_RESTORE;
+        mrb_gc_arena_restore(mrb, ai);
       }
       ret = ary;
     }
@@ -139,14 +140,12 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
   default:
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
   }
-  ARENA_RESTORE;
   return ret;
 }
 
 static mrb_value
 mrb_json_parse(mrb_state *mrb, mrb_value self)
 {
-  ARENA_SAVE;
   mrb_value json = mrb_nil_value();
   mrb_get_args(mrb, "o", &json);
   if (!mrb_string_p(json)) {
@@ -160,7 +159,6 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
 
   mrb_value value = json_value_to_mrb_value(mrb, root_value);
   json_value_free(root_value);
-  ARENA_RESTORE;
   return value;
 }
 
