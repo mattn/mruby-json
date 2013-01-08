@@ -18,8 +18,6 @@
 #define ARENA_RESTORE
 #endif
 
-static struct RClass *_class_json;
-
 /*********************************************************
  * main
  *********************************************************/
@@ -184,7 +182,7 @@ mrb_json_stringify(mrb_state *mrb, mrb_value self)
 
 void
 mrb_mruby_json_gem_init(mrb_state* mrb) {
-  _class_json = mrb_define_module(mrb, "JSON");
+  struct RClass *_class_json = mrb_define_module(mrb, "JSON");
   mrb_define_class_method(mrb, _class_json, "parse", mrb_json_parse, ARGS_REQ(1));
   mrb_define_class_method(mrb, _class_json, "stringify", mrb_json_stringify, ARGS_REQ(1));
 }
