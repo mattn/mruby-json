@@ -147,10 +147,7 @@ static mrb_value
 mrb_json_parse(mrb_state *mrb, mrb_value self)
 {
   mrb_value json = mrb_nil_value();
-  mrb_get_args(mrb, "o", &json);
-  if (!mrb_string_p(json)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
-  }
+  mrb_get_args(mrb, "S", &json);
 
   JSON_Value *root_value = json_parse_string(RSTRING_PTR(json));
   if (!root_value) {
