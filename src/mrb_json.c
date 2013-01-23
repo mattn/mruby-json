@@ -182,4 +182,8 @@ mrb_mruby_json_gem_init(mrb_state* mrb) {
   mrb_define_class_method(mrb, _class_json, "stringify", mrb_json_stringify, ARGS_REQ(1));
 }
 
+void
+mrb_mruby_json_gem_final(mrb_state* mrb) {
+}
+
 /* vim:set et ts=2 sts=2 sw=2 tw=0: */
