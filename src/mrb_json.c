@@ -43,17 +43,20 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     break;
   case MRB_TT_HASH:
     {
+      mrb_value keys;
+      int n, l;
       str = mrb_str_new_cstr(mrb, "{");
-      mrb_value keys = mrb_hash_keys(mrb, value);
-      int n, l = RARRAY_LEN(keys);
+      keys = mrb_hash_keys(mrb, value);
+      l = RARRAY_LEN(keys);
       for (n = 0; n < l; n++) {
+        mrb_value obj;
         int ai = mrb_gc_arena_save(mrb);
         mrb_value key = mrb_ary_entry(keys, n);
         mrb_value enckey = mrb_funcall(mrb, key, "to_s", 0, NULL);
         enckey = mrb_funcall(mrb, enckey, "inspect", 0, NULL);
         mrb_str_concat(mrb, str, enckey);
         mrb_str_cat2(mrb, str, ":");
-        mrb_value obj = mrb_hash_get(mrb, value, key);
+        obj = mrb_hash_get(mrb, value, key);
         mrb_str_concat(mrb, str, mrb_value_to_string(mrb, obj));
         if (n != l - 1) {
           mrb_str_cat2(mrb, str, ",");
@@ -65,8 +68,9 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     }
   case MRB_TT_ARRAY:
     {
+      int n, l;
       str = mrb_str_new_cstr(mrb, "[");
-      int n, l = RARRAY_LEN(value);
+      l = RARRAY_LEN(value);
       for (n = 0; n < l; n++) {
         int ai = mrb_gc_arena_save(mrb);
         mrb_value obj = mrb_ary_entry(value, n);
@@ -104,7 +108,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       mrb_value hash = mrb_hash_new(mrb);
       JSON_Object* object = json_value_get_object(value);
       size_t count = json_object_get_count(object);
-      int n;
+      size_t n;
       for (n = 0; n < count; n++) {
         int ai = mrb_gc_arena_save(mrb);
         const char* name = json_object_get_name(object, n);
@@ -118,10 +122,11 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
   case JSONArray:
     {
       mrb_value ary;
+      JSON_Array* array;
+      size_t n, count;
       ary = mrb_ary_new(mrb);
-      JSON_Array* array = json_value_get_array(value);
-      size_t count = json_array_get_count(array);
-      int n;
+      array = json_value_get_array(value);
+      count = json_array_get_count(array);
       for (n = 0; n < count; n++) {
         int ai = mrb_gc_arena_save(mrb);
         JSON_Value* elem = json_array_get_value(array, n);
@@ -146,15 +151,17 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
 static mrb_value
 mrb_json_parse(mrb_state *mrb, mrb_value self)
 {
+  mrb_value value;
+  JSON_Value *root_value;
   mrb_value json = mrb_nil_value();
   mrb_get_args(mrb, "S", &json);
 
-  JSON_Value *root_value = json_parse_string(RSTRING_PTR(json));
+  root_value = json_parse_string(RSTRING_PTR(json));
   if (!root_value) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid json");
   }
 
-  mrb_value value = json_value_to_mrb_value(mrb, root_value);
+  value = json_value_to_mrb_value(mrb, root_value);
   json_value_free(root_value);
   return value;
 }
