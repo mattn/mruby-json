@@ -54,9 +54,9 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
       value = tr(mrb, value, "\n",   "\\n"); mrb_gc_arena_restore(mrb, ai);
       value = tr(mrb, value, "\r",   "\\r"); mrb_gc_arena_restore(mrb, ai);
       value = tr(mrb, value, "\t",   "\\t"); mrb_gc_arena_restore(mrb, ai);
-      str = mrb_str_new_cstr(mrb, "\"");
+      str = mrb_str_new_cstr(mrb, "\""); mrb_gc_arena_restore(mrb, ai);
       mrb_str_concat(mrb, str, value); mrb_gc_arena_restore(mrb, ai);
-      mrb_str_cat2(mrb, str, "\"");
+      mrb_str_cat2(mrb, str, "\""); mrb_gc_arena_restore(mrb, ai);
     }
     break;
   case MRB_TT_HASH:
