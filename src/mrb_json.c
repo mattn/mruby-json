@@ -21,6 +21,11 @@
 /*********************************************************
  * main
  *********************************************************/
+static mrb_value
+tr(mrb_state* mrb, mrb_value s, const char* f, const char* t) {
+  return mrb_funcall(mrb, s, "gsub", 2,
+    mrb_str_new_cstr(mrb, f), mrb_str_new_cstr(mrb, t));
+}
 
 static mrb_value
 mrb_value_to_string(mrb_state* mrb, mrb_value value) {
@@ -39,7 +44,19 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     str = mrb_funcall(mrb, value, "to_s", 0, NULL);
     break;
   case MRB_TT_STRING:
-    str = mrb_funcall(mrb, value, "inspect", 0, NULL);
+    {
+      value = tr(mrb, value, "\"",   "\\\"");
+      value = tr(mrb, value, "\\\\", "\\\\");
+      value = tr(mrb, value, "/",    "\\/");
+      value = tr(mrb, value, "\b",   "\\b");
+      value = tr(mrb, value, "\f",   "\\f");
+      value = tr(mrb, value, "\n",   "\\n");
+      value = tr(mrb, value, "\r",   "\\r");
+      value = tr(mrb, value, "\t",   "\\t");
+      str = mrb_str_new_cstr(mrb, "\"");
+      mrb_str_concat(mrb, str, value);
+      mrb_str_cat2(mrb, str, "\"");
+    }
     break;
   case MRB_TT_HASH:
     {

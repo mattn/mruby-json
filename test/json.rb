@@ -37,3 +37,6 @@ end
 assert('stringify object with several keys') do
   JSON::stringify({"foo"=>1, "bar"=> 2}) == '{"bar":2,"foo":1}'
 end
+assert('stringify multi-byte') do
+  JSON::stringify({"foo"=>"ふー", "bar"=> "ばー"}) == '{"bar":"ばー","foo":"ふー"}'
+end
