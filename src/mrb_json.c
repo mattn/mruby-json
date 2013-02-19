@@ -45,16 +45,17 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     break;
   case MRB_TT_STRING:
     {
-      value = tr(mrb, value, "\"",   "\\\"");
-      value = tr(mrb, value, "\\\\", "\\\\");
-      value = tr(mrb, value, "/",    "\\/");
-      value = tr(mrb, value, "\b",   "\\b");
-      value = tr(mrb, value, "\f",   "\\f");
-      value = tr(mrb, value, "\n",   "\\n");
-      value = tr(mrb, value, "\r",   "\\r");
-      value = tr(mrb, value, "\t",   "\\t");
+      int ai = mrb_gc_arena_save(mrb);
+      value = tr(mrb, value, "\"",   "\\\""); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "\\\\", "\\\\"); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "/",    "\\/"); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "\b",   "\\b"); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "\f",   "\\f"); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "\n",   "\\n"); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "\r",   "\\r"); mrb_gc_arena_restore(mrb, ai);
+      value = tr(mrb, value, "\t",   "\\t"); mrb_gc_arena_restore(mrb, ai);
       str = mrb_str_new_cstr(mrb, "\"");
-      mrb_str_concat(mrb, str, value);
+      mrb_str_concat(mrb, str, value); mrb_gc_arena_restore(mrb, ai);
       mrb_str_cat2(mrb, str, "\"");
     }
     break;
