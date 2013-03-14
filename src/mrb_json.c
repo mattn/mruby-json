@@ -32,7 +32,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   mrb_value str;
 
   if (mrb_nil_p(value)) {
-    return mrb_str_new2(mrb, "null");
+    return mrb_str_new_cstr(mrb, "null");
   }
 
   switch (mrb_type(value)) {
