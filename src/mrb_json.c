@@ -119,7 +119,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
     ret = mrb_str_new_cstr(mrb, json_value_get_string(value));
     break;
   case JSONNumber:
-    ret = mrb_float_value(json_value_get_number(value));
+    ret = mrb_float_value(mrb, json_value_get_number(value));
     break;
   case JSONObject:
     {
