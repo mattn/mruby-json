@@ -43,6 +43,9 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   case MRB_TT_UNDEF:
     str = mrb_funcall(mrb, value, "to_s", 0, NULL);
     break;
+  case MRB_TT_SYMBOL:
+    value = mrb_funcall(mrb, value, "to_s", 0, NULL);
+    /* FALLTHROUGH */
   case MRB_TT_STRING:
     {
       int ai = mrb_gc_arena_save(mrb);
