@@ -191,13 +191,9 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_json_stringify(mrb_state *mrb, mrb_value self)
 {
-  int argc;
-  mrb_value* argv = NULL;
-  if (mrb_get_args(mrb, "*", &argv, &argc) != 1) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
-  }
-
-  return mrb_value_to_string(mrb, argv[0]);
+  mrb_value obj;
+  mrb_get_args(mrb, "o", &obj);
+  return mrb_value_to_string(mrb, obj);
 }
 
 /*********************************************************
