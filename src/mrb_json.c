@@ -43,6 +43,9 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   case MRB_TT_UNDEF:
     str = mrb_funcall(mrb, value, "to_s", 0, NULL);
     break;
+  case MRB_TT_SYMBOL:
+    value = mrb_funcall(mrb, value, "to_s", 0, NULL);
+    /* FALLTHROUGH */
   case MRB_TT_STRING:
     {
       int ai = mrb_gc_arena_save(mrb);
@@ -188,13 +191,9 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_json_stringify(mrb_state *mrb, mrb_value self)
 {
-  int argc;
-  mrb_value* argv = NULL;
-  if (mrb_get_args(mrb, "*", &argv, &argc) != 1) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
-  }
-
-  return mrb_value_to_string(mrb, argv[0]);
+  mrb_value obj;
+  mrb_get_args(mrb, "o", &obj);
+  return mrb_value_to_string(mrb, obj);
 }
 
 /*********************************************************
@@ -206,6 +205,7 @@ mrb_mruby_json_gem_init(mrb_state* mrb) {
   struct RClass *_class_json = mrb_define_module(mrb, "JSON");
   mrb_define_class_method(mrb, _class_json, "parse", mrb_json_parse, ARGS_REQ(1));
   mrb_define_class_method(mrb, _class_json, "stringify", mrb_json_stringify, ARGS_REQ(1));
+  mrb_define_class_method(mrb, _class_json, "generate", mrb_json_stringify, ARGS_REQ(1));
 }
 
 void

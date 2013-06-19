@@ -10,6 +10,9 @@ end
 assert('stringify boolean') do
   JSON::stringify(true) == "true"
 end
+assert('stringify symbol') do
+  JSON::stringify(:symbol) == "\"symbol\""
+end
 assert('strnigify object with numeric value') do
   JSON::stringify({"foo"=>"bar"}) == '{"foo":"bar"}'
 end
