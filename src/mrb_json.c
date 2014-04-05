@@ -3,6 +3,7 @@
 #include <mruby/array.h>
 #include <mruby/hash.h>
 #include <stdio.h>
+#include <math.h>
 #include "parson.h"
 
 #if 1
@@ -123,7 +124,15 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
     ret = mrb_str_new_cstr(mrb, json_value_get_string(value));
     break;
   case JSONNumber:
-    ret = mrb_float_value(mrb, json_value_get_number(value));
+    {
+      double d = json_value_get_number(value);
+      if (floor(d) == d) {
+        ret = mrb_fixnum_value(d);
+      }
+      else {
+        ret = mrb_float_value(mrb, d);
+      }
+    }
     break;
   case JSONObject:
     {
