@@ -38,7 +38,7 @@ assert('strnigify array with few elements') do
   JSON::stringify([1,true,"foo"]) == "[1,true,\"foo\"]"
 end
 assert('stringify object with several keys') do
-  JSON::stringify({"foo"=>1, "bar"=> 2}) == '{"bar":2,"foo":1}'
+  JSON::stringify({"bar"=> 2, "foo"=>1}) == '{"bar":2,"foo":1}'
 end
 assert('stringify multi-byte') do
   JSON::stringify({"foo"=>"ふー", "bar"=> "ばー"}) == '{"foo":"ふー","bar":"ばー"}'
