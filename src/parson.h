@@ -1,6 +1,6 @@
 /*
  Parson ( http://kgabis.github.com/parson/ )
- Copyright (c) 2012 Krzysztof Gabis
+ Copyright (c) 2012 - 2014 Krzysztof Gabis
  
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -46,12 +46,21 @@ typedef enum json_value_type {
     JSONBoolean = 6
 } JSON_Value_Type;
 
+   
 /* Parses first JSON value in a file, returns NULL in case of error */
 JSON_Value  * json_parse_file(const char *filename);
 
+/* Parses first JSON value in a file and ignores comments (/ * * / and //),
+   returns NULL in case of error */
+JSON_Value  * json_parse_file_with_comments(const char *filename);
+    
 /*  Parses first JSON value in a string, returns NULL in case of error */
 JSON_Value  * json_parse_string(const char *string);
 
+/*  Parses first JSON value in a string and ignores comments (/ * * / and //),
+    returns NULL in case of error */
+JSON_Value  * json_parse_string_with_comments(const char *string);
+    
 /* JSON Object */
 JSON_Value  * json_object_get_value  (const JSON_Object *object, const char *name);
 const char  * json_object_get_string (const JSON_Object *object, const char *name);

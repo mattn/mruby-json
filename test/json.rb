@@ -7,6 +7,9 @@ end
 assert('parse array') do
   JSON::parse('[true, "foo"]')[1] == "foo"
 end
+assert('parse multi-byte') do
+  assert_equal(JSON::parse('{"あいうえお": "かきくけこ"}'), {"あいうえお"=>"かきくけこ"})
+end
 assert('stringify boolean') do
   JSON::stringify(true) == "true"
 end
