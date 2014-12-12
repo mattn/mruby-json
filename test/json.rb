@@ -23,16 +23,16 @@ assert('strnigify object with string value') do
   JSON::stringify({"foo"=> 1}) == '{"foo":1}'
 end
 assert('stringify object with float value') do
-  JSON::stringify({"foo"=> 2.3}) == '{"foo":2.3}'
+  JSON::stringify({"foo"=> 2.5}) == '{"foo":2.5}'
 end
 assert('stringify object with nil value') do
   JSON::stringify({"foo"=> nil}) == '{"foo":null}'
 end
 assert('stringify object with boolean key and float value') do
-  JSON::stringify({true=> 3.4}) == '{"true":3.4}'
+  JSON::stringify({true=> 5.0}) == '{"true":5.0}'
 end
 assert('stringify object with object key and float value') do
-  JSON::stringify({{"foo"=> "bar"}=> 1.2}) == '{"{\"foo\"=>\"bar\"}":1.2}'
+  JSON::stringify({{"foo"=> "bar"}=> 1.5}) == '{"{\"foo\"=>\"bar\"}":1.5}'
 end
 assert('stringify empty array') do
   JSON::stringify([]) == "[]"
@@ -47,6 +47,16 @@ assert('stringify multi-byte') do
   JSON::stringify({"foo"=>"ふー", "bar"=> "ばー"}) == '{"foo":"ふー","bar":"ばー"}'
 end
 assert('stringify escaped') do
-  JSON::stringify(['\\']) == '["\\"]'
-  JSON::stringify(['\\\"']) == '["\\\""]'
+  JSON::stringify(['\\']) == '["\\\\"]'
+end
+assert('stringify escaped quote') do
+  JSON::stringify(['\\\"']) == '["\\\\\\\\\""]'
+  s = JSON::stringify(['\\\"'])
+  assert_equal '[', s[0]
+  assert_equal '"', s[1]
+  assert_equal '\\', s[2]; assert_equal '\\', s[3]
+  assert_equal '\\', s[4]; assert_equal '\\', s[5]
+  assert_equal '\\', s[6]; assert_equal '"', s[7]
+  assert_equal '"', s[8]
+  assert_equal ']', s[9]
 end
