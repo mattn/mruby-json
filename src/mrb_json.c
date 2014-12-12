@@ -50,8 +50,8 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   case MRB_TT_STRING:
     {
       int ai = mrb_gc_arena_save(mrb);
+      value = tr(mrb, value, "\\", "\\\\"); 
       value = tr(mrb, value, "\"",   "\\\""); 
-      value = tr(mrb, value, "\\\\", "\\\\"); 
       value = tr(mrb, value, "/",    "\\/"); 
       value = tr(mrb, value, "\b",   "\\b"); 
       value = tr(mrb, value, "\f",   "\\f"); 

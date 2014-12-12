@@ -46,3 +46,7 @@ end
 assert('stringify multi-byte') do
   JSON::stringify({"foo"=>"ふー", "bar"=> "ばー"}) == '{"foo":"ふー","bar":"ばー"}'
 end
+assert('stringify escaped') do
+  JSON::stringify(['\\']) == '["\\"]'
+  JSON::stringify(['\\\"']) == '["\\\""]'
+end
