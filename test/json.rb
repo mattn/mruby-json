@@ -29,7 +29,7 @@ assert('stringify object with nil value') do
   JSON::stringify({"foo"=> nil}) == '{"foo":null}'
 end
 assert('stringify object with boolean key and float value') do
-  JSON::stringify({true=> 5.0}) == '{"true":5.0}'
+  JSON::stringify({true=> 2.5}) == '{"true":2.5}'
 end
 assert('stringify object with object key and float value') do
   JSON::stringify({{"foo"=> "bar"}=> 1.5}) == '{"{\"foo\"=>\"bar\"}":1.5}'
