@@ -23,12 +23,6 @@
  * main
  *********************************************************/
 static mrb_value
-tr(mrb_state* mrb, mrb_value s, const char* f, const char* t) {
-  return mrb_funcall(mrb, s, "gsub", 2,
-    mrb_str_new_cstr(mrb, f), mrb_str_new_cstr(mrb, t));
-}
-
-static mrb_value
 mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   mrb_value str;
 
@@ -50,17 +44,38 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   case MRB_TT_STRING:
     {
       int ai = mrb_gc_arena_save(mrb);
-      value = tr(mrb, value, "\"",   "\\\""); 
-      value = tr(mrb, value, "\\\\", "\\\\"); 
-      value = tr(mrb, value, "/",    "\\/"); 
-      value = tr(mrb, value, "\b",   "\\b"); 
-      value = tr(mrb, value, "\f",   "\\f"); 
-      value = tr(mrb, value, "\n",   "\\n"); 
-      value = tr(mrb, value, "\r",   "\\r"); 
-      value = tr(mrb, value, "\t",   "\\t"); 
+      char* ptr = RSTRING_PTR(value);
       str = mrb_str_new_cstr(mrb, "\""); 
-      mrb_str_concat(mrb, str, value); 
-      mrb_str_cat2(mrb, str, "\""); 
+      while (*ptr) {
+        switch (*ptr) {
+        case '\\':
+          str = mrb_str_cat_cstr(mrb, str, "\\\\");
+          break;
+        case '"':
+          str = mrb_str_cat_cstr(mrb, str, "\\\"");
+          break;
+        case '\b':
+          str = mrb_str_cat_cstr(mrb, str, "\\b");
+          break;
+        case '\f':
+          str = mrb_str_cat_cstr(mrb, str, "\\f");
+          break;
+        case '\n':
+          str = mrb_str_cat_cstr(mrb, str, "\\n");
+          break;
+        case '\r':
+          str = mrb_str_cat_cstr(mrb, str, "\\r");
+          break;
+        case '\t':
+          str = mrb_str_cat_cstr(mrb, str, "\\t");
+          break;
+        default:
+          // TODO: handle unicode
+          str = mrb_str_cat(mrb, str, ptr, 1);
+        }
+        ptr++;
+      }
+      mrb_str_cat_cstr(mrb, str, "\""); 
       mrb_gc_arena_restore(mrb, ai);
     }
     break;
@@ -78,15 +93,15 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
         mrb_value enckey = mrb_funcall(mrb, key, "to_s", 0, NULL);
         enckey = mrb_funcall(mrb, enckey, "inspect", 0, NULL);
         mrb_str_concat(mrb, str, enckey);
-        mrb_str_cat2(mrb, str, ":");
+        mrb_str_cat_cstr(mrb, str, ":");
         obj = mrb_hash_get(mrb, value, key);
         mrb_str_concat(mrb, str, mrb_value_to_string(mrb, obj));
         if (n != l - 1) {
-          mrb_str_cat2(mrb, str, ",");
+          mrb_str_cat_cstr(mrb, str, ",");
         }
         mrb_gc_arena_restore(mrb, ai);
       }
-      mrb_str_cat2(mrb, str, "}");
+      mrb_str_cat_cstr(mrb, str, "}");
       break;
     }
   case MRB_TT_ARRAY:
@@ -99,11 +114,11 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
         mrb_value obj = mrb_ary_entry(value, n);
         mrb_str_concat(mrb, str, mrb_value_to_string(mrb, obj));
         if (n != l - 1) {
-          mrb_str_cat2(mrb, str, ",");
+          mrb_str_cat_cstr(mrb, str, ",");
         }
         mrb_gc_arena_restore(mrb, ai);
       }
-      mrb_str_cat2(mrb, str, "]");
+      mrb_str_cat_cstr(mrb, str, "]");
       break;
     }
   default:
