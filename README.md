@@ -12,9 +12,13 @@ MRuby::Build.new do |conf|
 
     conf.gem :github => 'mattn/mruby-json'
 end
-
+```
 
 ## License
 
 MIT
 
+
+## Author
+
+Yasuhiro Matsumoto (a.k.a mattn)
