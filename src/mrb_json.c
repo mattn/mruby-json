@@ -45,8 +45,9 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     {
       int ai = mrb_gc_arena_save(mrb);
       char* ptr = RSTRING_PTR(value);
+      char* end = RSTRING_END(value);
       str = mrb_str_new_cstr(mrb, "\""); 
-      while (*ptr) {
+      while (ptr < end && *ptr) {
         switch (*ptr) {
         case '\\':
           str = mrb_str_cat_cstr(mrb, str, "\\\\");
@@ -202,7 +203,7 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
   mrb_value json = mrb_nil_value();
   mrb_get_args(mrb, "S", &json);
 
-  root_value = json_parse_string(RSTRING_PTR(json));
+  root_value = json_parse_string(mrb_str_to_cstr(mrb, json));
   if (!root_value) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid json");
   }
