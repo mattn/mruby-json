@@ -60,3 +60,20 @@ assert('stringify escaped quote') do
   assert_equal '"', s[8]
   assert_equal ']', s[9]
 end
+assert('stringify object with to_json') do
+  class Foo
+    def to_json
+      '{"foo":"foo"}'
+    end
+  end
+  assert_equal '{"foo":"foo"}', JSON::stringify(Foo.new)
+end
+assert('stringify object with to_s') do
+  class Bar
+    def to_s
+      "bar"
+    end
+  end
+  assert_equal '"bar"', JSON::stringify(Bar.new)
+end
+

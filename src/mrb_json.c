@@ -123,8 +123,24 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
       break;
     }
   default:
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
-  }
+    {
+      struct RClass* c;
+      mrb_sym mid;
+
+      c = mrb_obj_class(mrb, value);
+      mid = mrb_intern_str(mrb, mrb_str_new_cstr(mrb, "to_json"));
+      if (mrb_obj_respond_to(mrb, c, mid)) {
+        str = mrb_funcall(mrb, value, "to_json", 0, NULL);
+      } else {
+        mid = mrb_intern_str(mrb, mrb_str_new_cstr(mrb, "to_s"));
+        if (mrb_obj_respond_to(mrb, c, mid)) {
+          str = mrb_value_to_string(mrb, mrb_funcall(mrb, value, "to_s", 0, NULL));
+        } else {
+          mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
+        }
+      }
+    }
+  } 
   return str;
 }
 
