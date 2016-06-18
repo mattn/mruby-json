@@ -22,6 +22,16 @@
 /*********************************************************
  * main
  *********************************************************/
+static mrb_bool
+mrb_method_defined(mrb_state* mrb, mrb_value value, const char* name) {
+  int ai = mrb_gc_arena_save(mrb);
+  mrb_sym mid = mrb_intern_cstr(mrb, name);
+  mrb_value methods = mrb_funcall(mrb, value, "methods", 0, NULL);
+  mrb_value included = mrb_funcall(mrb, methods, "include?", 1, mrb_symbol_value(mid), NULL);
+  mrb_gc_arena_restore(mrb, ai);
+  return mrb_type(included) == MRB_TT_TRUE;
+}
+
 static mrb_value
 mrb_value_to_string(mrb_state* mrb, mrb_value value) {
   mrb_value str;
@@ -124,21 +134,10 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     }
   default:
     {
-      struct RClass* c;
-      mrb_sym mid;
-
-      c = mrb_obj_class(mrb, value);
-      mid = mrb_intern_str(mrb, mrb_str_new_cstr(mrb, "to_json"));
-      if (mrb_obj_respond_to(mrb, c, mid)) {
+      if (mrb_method_defined(mrb, value, "to_json"))
         str = mrb_funcall(mrb, value, "to_json", 0, NULL);
-      } else {
-        mid = mrb_intern_str(mrb, mrb_str_new_cstr(mrb, "to_s"));
-        if (mrb_obj_respond_to(mrb, c, mid)) {
-          str = mrb_value_to_string(mrb, mrb_funcall(mrb, value, "to_s", 0, NULL));
-        } else {
-          mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");
-        }
-      }
+      else
+        str = mrb_value_to_string(mrb, mrb_funcall(mrb, value, "inspect", 0, NULL));
     }
   } 
   return str;
@@ -237,6 +236,12 @@ mrb_json_stringify(mrb_state *mrb, mrb_value self)
   return mrb_value_to_string(mrb, obj);
 }
 
+
+static mrb_value
+mrb_json_to_json(mrb_state *mrb, mrb_value self)
+{
+  return mrb_value_to_string(mrb, self);
+}
 /*********************************************************
  * register
  *********************************************************/
@@ -247,6 +252,7 @@ mrb_mruby_json_gem_init(mrb_state* mrb) {
   mrb_define_class_method(mrb, _class_json, "parse", mrb_json_parse, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, _class_json, "stringify", mrb_json_stringify, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, _class_json, "generate", mrb_json_stringify, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, mrb->object_class, "to_json", mrb_json_to_json, MRB_ARGS_NONE());
 }
 
 void

@@ -76,4 +76,21 @@ assert('stringify object with to_s') do
   end
   assert_equal '"bar"', JSON::stringify(Bar.new)
 end
-
+assert('Hash#to_json') do
+  assert_equal '{"foo":"bar"}', {"foo" => "bar"}.to_json
+end
+assert('String#to_json') do
+  assert_equal '"foo"', "foo".to_json
+end
+assert('Fixnum#to_json') do
+  assert_equal '1', 1.to_json
+end
+assert('TrueClass#to_json') do
+  assert_equal 'true', true.to_json
+end
+assert('FalseClass#to_json') do
+  assert_equal 'false', false.to_json
+end
+assert('Array#to_json') do
+  assert_equal '[1,3,true,["foo"]]', [1 ,3, true,["foo"]].to_json
+end
