@@ -26,7 +26,7 @@ static mrb_bool
 mrb_method_defined(mrb_state* mrb, mrb_value value, const char* name) {
   int ai = mrb_gc_arena_save(mrb);
   mrb_sym mid = mrb_intern_cstr(mrb, name);
-  mrb_value methods = mrb_funcall(mrb, value, "methods", 0, NULL);
+  mrb_value methods = mrb_funcall(mrb, value, "public_methods", 1, mrb_false_value());
   mrb_value included = mrb_funcall(mrb, methods, "include?", 1, mrb_symbol_value(mid), NULL);
   mrb_gc_arena_restore(mrb, ai);
   return mrb_type(included) == MRB_TT_TRUE;
@@ -136,6 +136,8 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value) {
     {
       if (mrb_method_defined(mrb, value, "to_json"))
         str = mrb_funcall(mrb, value, "to_json", 0, NULL);
+      else if (mrb_method_defined(mrb, value, "to_s"))
+        str = mrb_value_to_string(mrb, mrb_funcall(mrb, value, "to_s", 0, NULL));
       else
         str = mrb_value_to_string(mrb, mrb_funcall(mrb, value, "inspect", 0, NULL));
     }

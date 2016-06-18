@@ -76,6 +76,12 @@ assert('stringify object with to_s') do
   end
   assert_equal '"bar"', JSON::stringify(Bar.new)
 end
+assert('stringify object without to_s') do
+  class Baz
+  end
+  s = JSON::stringify(Baz.new)
+  assert_equal "\"#<Baz:", s[0,7]
+end
 assert('Hash#to_json') do
   assert_equal '{"foo":"bar"}', {"foo" => "bar"}.to_json
 end
