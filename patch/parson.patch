@@ -1,0 +1,53 @@
+diff --git a/src/parson.c b/src/parson.c
+index a2cc438..3cd4ca9 100644
+--- a/src/parson.c
++++ b/src/parson.c
+@@ -1037,7 +1037,7 @@ double json_object_get_number(const JSON_Object *object, const char *name) {
+     return json_value_get_number(json_object_get_value(object, name));
+ }
+ 
+-JSON_Object * json_object_get_object(const JSON_Object *object, const char *name) {
++JSON_Object * mruby_json_object_get_object(const JSON_Object *object, const char *name) {
+     return json_value_get_object(json_object_get_value(object, name));
+ }
+ 
+@@ -1661,7 +1661,7 @@ JSON_Status json_object_dotset_value(JSON_Object *object, const char *name, JSON
+         return json_object_set_value(object, name, value);
+     } else {
+         current_name = parson_strndup(name, dot_pos - name);
+-        temp_obj = json_object_get_object(object, current_name);
++        temp_obj = mruby_json_object_get_object(object, current_name);
+         if (temp_obj == NULL) {
+             new_value = json_value_init_object();
+             if (new_value == NULL) {
+@@ -1673,7 +1673,7 @@ JSON_Status json_object_dotset_value(JSON_Object *object, const char *name, JSON
+                 parson_free(current_name);
+                 return JSONFailure;
+             }
+-            temp_obj = json_object_get_object(object, current_name);
++            temp_obj = mruby_json_object_get_object(object, current_name);
+         }
+         parson_free(current_name);
+         return json_object_dotset_value(temp_obj, dot_pos + 1, value);
+@@ -1757,7 +1757,7 @@ JSON_Status json_object_dotremove(JSON_Object *object, const char *name) {
+         return json_object_remove(object, name);
+     } else {
+         current_name = parson_strndup(name, dot_pos - name);
+-        temp_obj = json_object_get_object(object, current_name);
++        temp_obj = mruby_json_object_get_object(object, current_name);
+         if (temp_obj == NULL) {
+             parson_free(current_name);
+             return JSONFailure;
+diff --git a/src/parson.h b/src/parson.h
+index 6a89982..31160a0 100644
+--- a/src/parson.h
++++ b/src/parson.h
+@@ -108,7 +108,7 @@ JSON_Status json_validate(const JSON_Value *schema, const JSON_Value *value);
+  */
+ JSON_Value  * json_object_get_value  (const JSON_Object *object, const char *name);
+ const char  * json_object_get_string (const JSON_Object *object, const char *name);
+-JSON_Object * json_object_get_object (const JSON_Object *object, const char *name);
++JSON_Object * mruby_json_object_get_object (const JSON_Object *object, const char *name);
+ JSON_Array  * json_object_get_array  (const JSON_Object *object, const char *name);
+ double        json_object_get_number (const JSON_Object *object, const char *name); /* returns 0 on fail */
+ int           json_object_get_boolean(const JSON_Object *object, const char *name); /* returns -1 on fail */
