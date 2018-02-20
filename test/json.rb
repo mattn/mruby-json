@@ -118,5 +118,5 @@ assert('pretty cat 🐱') do
   ]
 }
 EOS
-  assert_equal want, {"bar"=> [1,2,[{"baz" => true}, 3]]}.to_json(true)
+  assert_equal want, JSON::pretty_generate({"bar"=> [1,2,[{"baz" => true}, 3]]})
 end

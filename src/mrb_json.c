@@ -256,21 +256,23 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-mrb_json_stringify(mrb_state *mrb, mrb_value self)
-{
+mrb_json_generate(mrb_state *mrb, mrb_value self) {
   mrb_value obj;
-  mrb_bool pretty = FALSE;
-  mrb_get_args(mrb, "o|b", &obj, &pretty);
-  return mrb_str_cat_cstr(mrb, mrb_value_to_string(mrb, obj, pretty ? 0 : -1), "\n");
+  mrb_get_args(mrb, "o", &obj);
+  return mrb_value_to_string(mrb, obj, -1);
 }
 
 
 static mrb_value
-mrb_json_to_json(mrb_state *mrb, mrb_value self)
-{
-  mrb_bool pretty = FALSE;
-  mrb_get_args(mrb, "|b", &pretty);
-  return mrb_str_cat_cstr(mrb, mrb_value_to_string(mrb, self, pretty ? 0 : -1), "\n");
+mrb_json_pretty_generate(mrb_state *mrb, mrb_value self) {
+  mrb_value obj;
+  mrb_get_args(mrb, "o", &obj);
+  return mrb_str_cat_cstr(mrb, mrb_value_to_string(mrb, obj, 0), "\n");
+}
+
+static mrb_value
+mrb_json_to_json(mrb_state *mrb, mrb_value self) {
+  return mrb, mrb_value_to_string(mrb, self, -1);
 }
 /*********************************************************
  * register
@@ -280,9 +282,10 @@ void
 mrb_mruby_json_gem_init(mrb_state* mrb) {
   struct RClass *_class_json = mrb_define_module(mrb, "JSON");
   mrb_define_class_method(mrb, _class_json, "parse", mrb_json_parse, MRB_ARGS_REQ(1));
-  mrb_define_class_method(mrb, _class_json, "stringify", mrb_json_stringify, MRB_ARGS_REQ(1)|MRB_ARGS_OPT(1));
-  mrb_define_class_method(mrb, _class_json, "generate", mrb_json_stringify, MRB_ARGS_REQ(1)|MRB_ARGS_OPT(1));
-  mrb_define_class_method(mrb, mrb->object_class, "to_json", mrb_json_to_json, MRB_ARGS_OPT(1));
+  mrb_define_class_method(mrb, _class_json, "stringify", mrb_json_generate, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, _class_json, "generate", mrb_json_generate, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, _class_json, "pretty_generate", mrb_json_pretty_generate, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, mrb->object_class, "to_json", mrb_json_to_json, MRB_ARGS_NONE());
 }
 
 void

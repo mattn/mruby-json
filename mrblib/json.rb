@@ -1,5 +1,5 @@
 class Object
-  def to_json(pretty=false)
-    JSON::generate(self, pretty)
+  def to_json()
+    JSON::generate(self)
   end
 end
