@@ -111,11 +111,15 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
     {
       mrb_value keys;
       int n, l;
+
       str = mrb_str_new_cstr(mrb, "{");
-      pretty++;
-      if (pretty >= 0 && l > 0) str = pretty_cat(mrb, str, pretty);
       keys = mrb_hash_keys(mrb, value);
       l = RARRAY_LEN(keys);
+      if (l == 0) {
+        if (pretty >= 0) return mrb_str_cat_cstr(mrb, str, "\n}");
+        return mrb_str_cat_cstr(mrb, str, "}");
+      }
+      if (pretty >= 0) str = pretty_cat(mrb, str, ++pretty);
       for (n = 0; n < l; n++) {
         mrb_value obj;
         int ai = mrb_gc_arena_save(mrb);
@@ -132,18 +136,21 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
         }
         mrb_gc_arena_restore(mrb, ai);
       }
-      pretty--;
-      if (pretty >= 0) str = pretty_cat(mrb, str, pretty);
+      if (pretty >= 0) str = pretty_cat(mrb, str, --pretty);
       mrb_str_cat_cstr(mrb, str, "}");
       break;
     }
   case MRB_TT_ARRAY:
     {
       int n, l;
+
       str = mrb_str_new_cstr(mrb, "[");
-      pretty++;
-      if (pretty >= 0 && l > 0) str = pretty_cat(mrb, str, pretty);
       l = RARRAY_LEN(value);
+      if (l == 0) {
+        if (pretty >= 0) return mrb_str_cat_cstr(mrb, str, "\n]");
+        return mrb_str_cat_cstr(mrb, str, "]");
+      }
+      if (pretty >= 0) str = pretty_cat(mrb, str, ++pretty);
       for (n = 0; n < l; n++) {
         int ai = mrb_gc_arena_save(mrb);
         mrb_value obj = mrb_ary_entry(value, n);
@@ -154,8 +161,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
         }
         mrb_gc_arena_restore(mrb, ai);
       }
-      pretty--;
-      if (pretty >= 0) str = pretty_cat(mrb, str, pretty);
+      if (pretty >= 0) str = pretty_cat(mrb, str, --pretty);
       mrb_str_cat_cstr(mrb, str, "]");
       break;
     }
@@ -267,12 +273,12 @@ static mrb_value
 mrb_json_pretty_generate(mrb_state *mrb, mrb_value self) {
   mrb_value obj;
   mrb_get_args(mrb, "o", &obj);
-  return mrb_str_cat_cstr(mrb, mrb_value_to_string(mrb, obj, 0), "\n");
+  return mrb_value_to_string(mrb, obj, 0);
 }
 
 static mrb_value
 mrb_json_to_json(mrb_state *mrb, mrb_value self) {
-  return mrb, mrb_value_to_string(mrb, self, -1);
+  return mrb_value_to_string(mrb, self, -1);
 }
 /*********************************************************
  * register
