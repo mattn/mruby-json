@@ -100,3 +100,23 @@ end
 assert('Array#to_json') do
   assert_equal '[1,3,true,["foo"]]', [1 ,3, true,["foo"]].to_json
 end
+assert('Array#to_json') do
+  assert_equal '[1,3,true,["foo"]]', [1 ,3, true,["foo"]].to_json
+end
+assert('pretty cat 🐱') do
+  want =<<EOS
+{
+  "bar":[
+    1,
+    2,
+    [
+      {
+        "baz":true
+      },
+      3
+    ]
+  ]
+}
+EOS
+  assert_equal want, {"bar"=> [1,2,[{"baz" => true}, 3]]}.to_json(true)
+end
