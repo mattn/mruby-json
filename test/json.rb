@@ -106,8 +106,8 @@ end
 assert('pretty cat 🐱') do
   assert_equal "true", JSON::pretty_generate(true)
   assert_equal "1.2", JSON::pretty_generate(1.2)
-  assert_equal "[]", JSON::pretty_generate([])
-  assert_equal "{}", JSON::pretty_generate({})
+  assert_equal "[\n]", JSON::pretty_generate([])
+  assert_equal "{\n}", JSON::pretty_generate({})
   want =<<EOS
 {
   "bar":[
@@ -122,5 +122,5 @@ assert('pretty cat 🐱') do
   ]
 }
 EOS
-  assert_equal want, JSON::pretty_generate({"bar"=> [1,2,[{"baz" => true}, 3]]})
+  assert_equal want[0..-2], JSON::pretty_generate({"bar"=> [1,2,[{"baz" => true}, 3]]})
 end
