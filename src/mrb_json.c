@@ -113,7 +113,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
       int n, l;
       str = mrb_str_new_cstr(mrb, "{");
       pretty++;
-      if (pretty >= 0) str = pretty_cat(mrb, str, pretty);
+      if (pretty >= 0 && l > 0) str = pretty_cat(mrb, str, pretty);
       keys = mrb_hash_keys(mrb, value);
       l = RARRAY_LEN(keys);
       for (n = 0; n < l; n++) {
@@ -142,7 +142,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
       int n, l;
       str = mrb_str_new_cstr(mrb, "[");
       pretty++;
-      if (pretty >= 0) str = pretty_cat(mrb, str, pretty);
+      if (pretty >= 0 && l > 0) str = pretty_cat(mrb, str, pretty);
       l = RARRAY_LEN(value);
       for (n = 0; n < l; n++) {
         int ai = mrb_gc_arena_save(mrb);
