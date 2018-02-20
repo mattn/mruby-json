@@ -103,7 +103,15 @@ end
 assert('Array#to_json') do
   assert_equal '[1,3,true,["foo"]]', [1 ,3, true,["foo"]].to_json
 end
-assert('pretty cat 🐱') do
+assert('pretty cat 🐱 1') do
+  want = "true"
+  assert_equal want, JSON::pretty_generate(true)
+end
+assert('pretty cat 🐱 2') do
+  want = "1.2"
+  assert_equal want, JSON::pretty_generate(1.2)
+end
+assert('pretty cat 🐱 3') do
   want =<<EOS
 {
   "bar":[
