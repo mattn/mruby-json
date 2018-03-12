@@ -134,3 +134,6 @@ assert('dump') do
   JSON.dump(123, w)
   assert_equal "123", w.to_s
 end
+assert('ParserError') do
+  assert_raise(JSON::ParserError) { JSON::parse('{') }
+end
