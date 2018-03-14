@@ -18,6 +18,10 @@ my_strtod(const char *s, char **e) {
   return mrb_float_read(s, e);
 }
 #else
+double
+my_strtod(const char *s, char **e) {
+  return strtod(s, e);
+}
 #endif
 
 #if 1
