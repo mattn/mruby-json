@@ -1,3 +1,5 @@
+#undef strtod
+#undef __strtod
 #include <mruby.h>
 #include <mruby/string.h>
 #include <mruby/array.h>
@@ -6,6 +8,17 @@
 #include <stdio.h>
 #include <math.h>
 #include "parson.h"
+
+#ifndef MRB_WITHOUT_FLOAT
+double
+my_strtod(const char *s, char **e) {
+  intmax_t v = strtoimax(s, e, 10);
+  if (errno == 0 && MRB_INT_MIN <= v && v <= MRB_INT_MAX)
+    return *(double*)&v;
+  return mrb_float_read(s, e);
+}
+#else
+#endif
 
 #if 1
 #define ARENA_SAVE \
@@ -194,7 +207,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
     {
       double d = json_value_get_number(value);
       if (floor(d) == d) {
-        ret = mrb_fixnum_value(d);
+        ret = mrb_fixnum_value(*(mrb_int*)&d);
       }
       else {
         ret = mrb_float_value(mrb, d);
