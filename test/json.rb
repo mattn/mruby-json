@@ -145,6 +145,6 @@ assert('load') do
   assert_equal({"foo"=>"bar"}, o)
 
   o = nil
-  assert_raise(JSON::ParserError) { JSON.load '{', {|x| o = x} }
+  assert_raise(JSON::ParserError) { JSON.load '{' {|x| o = x} }
   assert_equal(nil, o)
 end
