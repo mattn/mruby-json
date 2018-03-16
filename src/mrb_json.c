@@ -190,6 +190,14 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
   case JSONString:
     ret = mrb_str_new_cstr(mrb, json_value_get_string(value));
     break;
+#ifdef JSON_FIXED_NUMBER
+  case JSONFixed:
+    ret = mrb_fixnum_value((mrb_int)json_value_get_fixed(value));
+    break;
+  case JSONNumber:
+    ret = mrb_float_value(mrb, json_value_get_number(value));
+    break;
+#else
   case JSONNumber:
     {
       double d = json_value_get_number(value);
@@ -201,6 +209,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       }
     }
     break;
+#endif
   case JSONObject:
     {
       mrb_value hash = mrb_hash_new(mrb);

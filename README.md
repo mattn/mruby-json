@@ -18,6 +18,9 @@ end
 
 MIT
 
+## Note
+
+This repository include fork of [parson](https://github.com/kgabis/parson) library because parson only handle 11 bits precision for numbers. If you want to contribute to the source parson.c or parson.h, please send PR to my [fork](https://github.com/mattn/parson).
 
 ## Author
 
