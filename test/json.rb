@@ -5,7 +5,7 @@ assert('parse null') do
   assert_equal({"foo"=>nil}, JSON.parse('{"foo": null}'))
 end
 assert('parse array') do
-  assert_equal "foo", JSON.parse('[true, "foo"]')[1] 
+  assert_equal "foo", JSON.parse('[true, "foo"]')[1]
 end
 assert('parse multi-byte') do
   assert_equal({"あいうえお"=>"かきくけこ"}, JSON.parse('{"あいうえお": "かきくけこ"}'))
@@ -41,7 +41,7 @@ assert('stringify empty array') do
   assert_equal "[]",  JSON.stringify([])
 end
 assert('strnigify array with few elements') do
-  assert_equal "[1,true,\"foo\"]", JSON.stringify([1,true,"foo"]) 
+  assert_equal "[1,true,\"foo\"]", JSON.stringify([1,true,"foo"])
 end
 assert('stringify object with several keys') do
   assert_equal '{"bar":2,"foo":1}', JSON.stringify({"bar"=> 2, "foo"=>1})
@@ -148,6 +148,6 @@ assert('load') do
   assert_equal({"foo"=>"bar"}, o)
 
   o = nil
-  assert_raise(JSON::ParserError) { JSON.load '{' {|x| o = x} }
+  assert_raise(JSON::ParserError) { JSON.load('{') {|x| o = x} }
   assert_equal(nil, o)
 end
