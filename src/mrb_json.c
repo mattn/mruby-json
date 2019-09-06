@@ -3,6 +3,7 @@
 #include <mruby/array.h>
 #include <mruby/hash.h>
 #include <mruby/variable.h>
+#include <mruby/numeric.h>
 #include <stdio.h>
 #include <math.h>
 #include "parson.h"
@@ -27,6 +28,7 @@
 #endif
 
 #define E_PARSER_ERROR mrb_class_get_under(mrb, mrb_module_get(mrb, "JSON"), "ParserError")
+#define MRB_FLO_TO_STR_FMT "%.16g"
 
 /*********************************************************
  * main
@@ -68,14 +70,16 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
 
   switch (mrb_type(value)) {
   case MRB_TT_FIXNUM:
-#ifndef MRB_WITHOUT_FLOAT
-  case MRB_TT_FLOAT:
-#endif
   case MRB_TT_TRUE:
   case MRB_TT_FALSE:
   case MRB_TT_UNDEF:
     str = mrb_funcall(mrb, value, "to_s", 0, NULL);
     break;
+#ifndef MRB_WITHOUT_FLOAT
+  case MRB_TT_FLOAT:
+    str = mrb_float_to_str(mrb, value, MRB_FLO_TO_STR_FMT);
+    break;
+#endif
   case MRB_TT_SYMBOL:
     value = mrb_funcall(mrb, value, "to_s", 0, NULL);
     /* FALLTHROUGH */
