@@ -19,10 +19,10 @@ end
 assert('stringify symbol') do
   assert_equal "\"symbol\"", JSON.stringify(:symbol)
 end
-assert('strnigify object with numeric value') do
+assert('stringify object with numeric value') do
   assert_equal '{"foo":"bar"}', JSON.stringify({"foo"=>"bar"})
 end
-assert('strnigify object with string value') do
+assert('stringify object with string value') do
   assert_equal '{"foo":1}', JSON.stringify({"foo"=> 1})
 end
 assert('stringify object with float value') do
@@ -32,7 +32,7 @@ assert('stringify object with nil value') do
   assert_equal '{"foo":null}', JSON.stringify({"foo"=> nil})
 end
 assert('stringify object with boolean key and float value') do
-  assert_equal '{"true":5}', JSON.stringify({true=> 5.0})
+  assert_equal '{"true":5.0}', JSON.stringify({true=> 5.0})
 end
 assert('stringify object with object key and float value') do
   assert_equal '{"{\"foo\"=>\"bar\"}":1.5}', JSON.stringify({{"foo"=> "bar"}=> 1.5})
@@ -40,7 +40,7 @@ end
 assert('stringify empty array') do
   assert_equal "[]",  JSON.stringify([])
 end
-assert('strnigify array with few elements') do
+assert('stringify array with few elements') do
   assert_equal "[1,true,\"foo\"]", JSON.stringify([1,true,"foo"]) 
 end
 assert('stringify object with several keys') do
