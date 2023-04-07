@@ -188,7 +188,7 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
 }
 
 static mrb_value
-json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
+json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value, int symbolize_names) {
   mrb_value ret;
   switch (json_value_get_type(value)) {
   case JSONError:
@@ -231,8 +231,11 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       for (n = 0; n < count; n++) {
         int ai = mrb_gc_arena_save(mrb);
         const char* name = json_object_get_name(object, n);
-        mrb_hash_set(mrb, hash, mrb_str_new_cstr(mrb, name),
-          json_value_to_mrb_value(mrb, json_object_get_value(object, name)));
+        
+        mrb_value key = symbolize_names == 1 ? 
+          mrb_symbol_value(mrb_intern_cstr(mrb, name)) : mrb_str_new_cstr(mrb, name);
+        mrb_hash_set(mrb, hash, key,
+          json_value_to_mrb_value(mrb, json_object_get_value(object, name), symbolize_names));
         mrb_gc_arena_restore(mrb, ai);
       }
       ret = hash;
@@ -249,7 +252,7 @@ json_value_to_mrb_value(mrb_state* mrb, JSON_Value* value) {
       for (n = 0; n < count; n++) {
         int ai = mrb_gc_arena_save(mrb);
         JSON_Value* elem = json_array_get_value(array, n);
-        mrb_ary_push(mrb, ary, json_value_to_mrb_value(mrb, elem));
+        mrb_ary_push(mrb, ary, json_value_to_mrb_value(mrb, elem, symbolize_names));
         mrb_gc_arena_restore(mrb, ai);
       }
       ret = ary;
@@ -272,15 +275,21 @@ mrb_json_load(mrb_state *mrb, mrb_value self)
 {
   mrb_value value, blk;
   JSON_Value *root_value;
+  mrb_sym kw_names[] = { mrb_intern_lit(mrb, "symbolize_names") };
+  mrb_value kw_values[1];
+  mrb_kwargs kwargs = { 1, 0, kw_names, kw_values, NULL };
   mrb_value json = mrb_nil_value();
-  mrb_get_args(mrb, "S&", &json, &blk);
+  mrb_get_args(mrb, "S:&", &json, &kwargs, &blk); 
+
+  if (mrb_undef_p(kw_values[0])) { kw_values[0] = mrb_bool_value(0); }
+  int symbolize_names = mrb_bool(kw_values[0]);
 
   root_value = json_parse_string(mrb_str_to_cstr(mrb, json));
   if (!root_value) {
     mrb_raise(mrb, E_PARSER_ERROR, "invalid json");
   }
 
-  value = json_value_to_mrb_value(mrb, root_value);
+  value = json_value_to_mrb_value(mrb, root_value, symbolize_names);
   json_value_free(root_value);
   if (!mrb_nil_p(blk)) {
     mrb_value args[1];
@@ -295,15 +304,21 @@ mrb_json_parse(mrb_state *mrb, mrb_value self)
 {
   mrb_value value;
   JSON_Value *root_value;
+  mrb_sym kw_names[] = { mrb_intern_lit(mrb, "symbolize_names") };
+  mrb_value kw_values[1];
+  mrb_kwargs kwargs = { 1, 0, kw_names, kw_values, NULL };
   mrb_value json = mrb_nil_value();
-  mrb_get_args(mrb, "S", &json);
+  mrb_get_args(mrb, "S:", &json, &kwargs);
+
+  if (mrb_undef_p(kw_values[0])) { kw_values[0] = mrb_bool_value(0); }
+  int symbolize_names = mrb_bool(kw_values[0]);
 
   root_value = json_parse_string(mrb_str_to_cstr(mrb, json));
   if (!root_value) {
     mrb_raise(mrb, E_PARSER_ERROR, "invalid json");
   }
 
-  value = json_value_to_mrb_value(mrb, root_value);
+  value = json_value_to_mrb_value(mrb, root_value, symbolize_names);
   json_value_free(root_value);
   return value;
 }
