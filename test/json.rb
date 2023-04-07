@@ -148,3 +148,10 @@ assert('load') do
   assert_raise(JSON::ParserError) { JSON.load '{' {|x| o = x} }
   assert_equal(nil, o)
 end
+
+assert('symbolize_names') do
+  assert_equal({"foo"=>"bar"}, JSON.parse('{"foo": "bar"}', symbolize_names: false))
+  assert_equal({:foo=>"bar"}, JSON.parse('{"foo": "bar"}', symbolize_names: true))
+  assert_equal({"foo"=>"bar"}, JSON.load('{"foo": "bar"}', symbolize_names: false))
+  assert_equal({:foo=>"bar"}, JSON.load('{"foo": "bar"}', symbolize_names: true))
+end
