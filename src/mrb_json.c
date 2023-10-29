@@ -81,7 +81,6 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
     /* FALLTHROUGH */
   case MRB_TT_STRING:
     {
-      int ai = mrb_gc_arena_save(mrb);
       char* ptr = RSTRING_PTR(value);
       char* end = RSTRING_END(value);
       str = mrb_str_new_cstr(mrb, "\""); 
@@ -115,7 +114,6 @@ mrb_value_to_string(mrb_state* mrb, mrb_value value, int pretty) {
         ptr++;
       }
       mrb_str_cat_cstr(mrb, str, "\""); 
-      mrb_gc_arena_restore(mrb, ai);
     }
     break;
   case MRB_TT_HASH:
