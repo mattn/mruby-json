@@ -32,7 +32,7 @@ assert('stringify object with nil value') do
   assert_equal '{"foo":null}', JSON.stringify({"foo"=> nil})
 end
 assert('stringify object with object key and float value') do
-  assert_equal '{"{\"foo\"=>\"bar\"}":1.5}', JSON.stringify({{"foo"=> "bar"}=> 1.5})
+  assert_equal '{"{\"foo\" => \"bar\"}":1.5}', JSON.stringify({{"foo"=> "bar"}=> 1.5})
 end
 assert('stringify empty array') do
   assert_equal "[]",  JSON.stringify([])
@@ -145,6 +145,6 @@ assert('load') do
   assert_equal({"foo"=>"bar"}, o)
 
   o = nil
-  assert_raise(JSON::ParserError) { JSON.load '{' {|x| o = x} }
+  assert_raise(JSON::ParserError) { JSON.load('{') {|x| o = x} }
   assert_equal(nil, o)
 end
