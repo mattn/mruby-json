@@ -78,6 +78,7 @@ struct json_value_t {
     JSON_Value      *parent;
     JSON_Value_Type  type;
     JSON_Value_Value value;
+    size_t           string_len; /* JSONString only; the string may hold NUL */
 };
 
 struct json_object_t {
@@ -112,6 +113,7 @@ static int    is_decimal(const char *string, size_t length);
 /* JSON Object */
 static JSON_Object * json_object_init(JSON_Value *wrapping_value);
 static JSON_Status   json_object_add(JSON_Object *object, const char *name, JSON_Value *value);
+static JSON_Status   json_object_append(JSON_Object *object, const char *name, JSON_Value *value);
 static JSON_Status   json_object_resize(JSON_Object *object, size_t new_capacity);
 static JSON_Value  * json_object_nget_value(const JSON_Object *object, const char *name, size_t n);
 static void          json_object_free(JSON_Object *object);
@@ -128,8 +130,8 @@ static JSON_Value * json_value_init_string_no_copy(char *string);
 /* Parser */
 static JSON_Status  skip_quotes(const char **string);
 static int          parse_utf16(const char **unprocessed, char **processed);
-static char *       process_string(const char *input, size_t len);
-static char *       get_quoted_string(const char **string);
+static char *       process_string(const char *input, size_t len, size_t *out_len);
+static char *       get_quoted_string(const char **string, size_t *out_len);
 static JSON_Value * parse_object_value(const char **string, size_t nesting);
 static JSON_Value * parse_array_value(const char **string, size_t nesting);
 static JSON_Value * parse_string_value(const char **string);
@@ -255,19 +257,29 @@ static int is_valid_utf8(const char *string, size_t string_len) {
     return 1;
 }
 
+/* Whether string is exactly one JSON number:
+   -?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)? */
 static int is_decimal(const char *string, size_t length) {
-    if (length > 1 && string[0] == '0' && string[1] != '.') {
-        return 0;
+    const char *p = string, *end = string + length;
+    if (p < end && *p == '-') p++;
+    if (p >= end || !isdigit((unsigned char)*p)) return 0;
+    if (*p == '0') {
+        p++;
+    } else {
+        while (p < end && isdigit((unsigned char)*p)) p++;
     }
-    if (length > 2 && !strncmp(string, "-0", 2) && string[2] != '.') {
-        return 0;
+    if (p < end && *p == '.') {
+        p++;
+        if (p >= end || !isdigit((unsigned char)*p)) return 0;
+        while (p < end && isdigit((unsigned char)*p)) p++;
     }
-    while (length--) {
-        if (strchr("xX", string[length])) {
-            return 0;
-        }
+    if (p < end && (*p == 'e' || *p == 'E')) {
+        p++;
+        if (p < end && (*p == '+' || *p == '-')) p++;
+        if (p >= end || !isdigit((unsigned char)*p)) return 0;
+        while (p < end && isdigit((unsigned char)*p)) p++;
     }
-    return 1;
+    return p == end;
 }
 
 #ifndef MRB_DISABLE_STDIO
@@ -355,13 +367,18 @@ static JSON_Object * json_object_init(JSON_Value *wrapping_value) {
 }
 
 static JSON_Status json_object_add(JSON_Object *object, const char *name, JSON_Value *value) {
-    size_t index = 0;
     if (object == NULL || name == NULL || value == NULL) {
         return JSONFailure;
     }
     if (json_object_get_value(object, name) != NULL) {
         return JSONFailure;
     }
+    return json_object_append(object, name, value);
+}
+
+/* json_object_add for a name known not to be in object yet */
+static JSON_Status json_object_append(JSON_Object *object, const char *name, JSON_Value *value) {
+    size_t index = 0;
     if (object->count >= object->capacity) {
         size_t new_capacity = MAX(object->capacity * 2, STARTING_CAPACITY);
         if (json_object_resize(object, new_capacity) == JSONFailure) {
@@ -410,13 +427,11 @@ static JSON_Status json_object_resize(JSON_Object *object, size_t new_capacity) 
 }
 
 static JSON_Value * json_object_nget_value(const JSON_Object *object, const char *name, size_t n) {
-    size_t i, name_length;
+    size_t i;
     for (i = 0; i < json_object_get_count(object); i++) {
-        name_length = strlen(object->names[i]);
-        if (name_length != n) {
-            continue;
-        }
-        if (strncmp(object->names[i], name, n) == 0) {
+        /* Equal n bytes and a NUL right after is an equal name, with no
+           strlen of every name on the way */
+        if (strncmp(object->names[i], name, n) == 0 && object->names[i][n] == '\0') {
             return object->values[i];
         }
     }
@@ -496,6 +511,7 @@ static JSON_Value * json_value_init_string_no_copy(char *string) {
     new_value->parent = NULL;
     new_value->type = JSONString;
     new_value->value.string = string;
+    new_value->string_len = strlen(string);
     return new_value;
 }
 
@@ -569,7 +585,7 @@ static int parse_utf16(const char **unprocessed, char **processed) {
 
 /* Copies and processes passed string up to supplied length.
 Example: "\u006Corem ipsum" -> lorem ipsum */
-static char* process_string(const char *input, size_t len) {
+static char* process_string(const char *input, size_t len, size_t *out_len) {
     const char *input_ptr = input;
     size_t initial_size = (len + 1) * sizeof(char);
     size_t final_size = 0;
@@ -608,6 +624,9 @@ static char* process_string(const char *input, size_t len) {
         input_ptr++;
     }
     *output_ptr = '\0';
+    if (out_len != NULL) {
+        *out_len = (size_t)(output_ptr-output);
+    }
     /* resize to new length */
     final_size = (size_t)(output_ptr-output) + 1;
     /* todo: don't resize if final_size == initial_size */
@@ -625,7 +644,7 @@ error:
 
 /* Return processed contents of a string between quotes and
    skips passed argument to a matching quote. */
-static char * get_quoted_string(const char **string) {
+static char * get_quoted_string(const char **string, size_t *out_len) {
     const char *string_start = *string;
     size_t string_len = 0;
     JSON_Status status = skip_quotes(string);
@@ -633,7 +652,7 @@ static char * get_quoted_string(const char **string) {
         return NULL;
     }
     string_len = *string - string_start - 2; /* length without quotes */
-    return process_string(string_start + 1, string_len);
+    return process_string(string_start + 1, string_len, out_len);
 }
 
 static JSON_Value * parse_value(const char **string, size_t nesting) {
@@ -675,8 +694,14 @@ static JSON_Value * parse_object_value(const char **string, size_t nesting) {
         return output_value;
     }
     while (**string != '\0') {
-        new_key = get_quoted_string(string);
+        size_t key_len = 0;
+        new_key = get_quoted_string(string, &key_len);
         if (new_key == NULL) {
+            json_value_free(output_value);
+            return NULL;
+        }
+        if (key_len != strlen(new_key)) { /* names are NUL terminated */
+            parson_free(new_key);
             json_value_free(output_value);
             return NULL;
         }
@@ -693,7 +718,8 @@ static JSON_Value * parse_object_value(const char **string, size_t nesting) {
             json_value_free(output_value);
             return NULL;
         }
-        if (json_object_add(output_object, new_key, new_value) == JSONFailure) {
+        /* A later duplicate name replaces the earlier value */
+        if (json_object_set_value(output_object, new_key, new_value) == JSONFailure) {
             parson_free(new_key);
             json_value_free(new_value);
             json_value_free(output_value);
@@ -759,7 +785,8 @@ static JSON_Value * parse_array_value(const char **string, size_t nesting) {
 
 static JSON_Value * parse_string_value(const char **string) {
     JSON_Value *value = NULL;
-    char *new_string = get_quoted_string(string);
+    size_t string_len = 0;
+    char *new_string = get_quoted_string(string, &string_len);
     if (new_string == NULL) {
         return NULL;
     }
@@ -768,6 +795,7 @@ static JSON_Value * parse_string_value(const char **string) {
         parson_free(new_string);
         return NULL;
     }
+    value->string_len = string_len;
     return value;
 }
 
@@ -792,7 +820,8 @@ static JSON_Value * parse_number_value(const char **string) {
     errno = 0;
     fixed = strtoimax(*string, &end, 10);
     if (errno == 0 && INT64_MIN <= fixed && fixed <= INT64_MAX && end != NULL &&
-			(*end == 0x00 || (*end != '.' && *end != 'e' && *end != 'E'))) {
+			(*end == 0x00 || (*end != '.' && *end != 'e' && *end != 'E')) &&
+			is_decimal(*string, end - *string)) {
         *string = end;
         return json_value_init_fixed(fixed);
     }
@@ -1087,13 +1116,22 @@ JSON_Value * json_parse_file_with_comments(const char *filename) {
 #endif
 
 JSON_Value * json_parse_string(const char *string) {
+    return json_parse_string_end(string, NULL);
+}
+
+JSON_Value * json_parse_string_end(const char *string, const char **end) {
+    JSON_Value *value = NULL;
     if (string == NULL) {
         return NULL;
     }
     if (string[0] == '\xEF' && string[1] == '\xBB' && string[2] == '\xBF') {
         string = string + 3; /* Support for UTF-8 BOM */
     }
-    return parse_value((const char**)&string, 0);
+    value = parse_value((const char**)&string, 0);
+    if (end != NULL) {
+        *end = string;
+    }
+    return value;
 }
 
 JSON_Value * json_parse_string_with_comments(const char *string) {
@@ -1278,6 +1316,10 @@ JSON_Array * json_value_get_array(const JSON_Value *value) {
 
 const char * json_value_get_string(const JSON_Value *value) {
     return json_value_get_type(value) == JSONString ? value->value.string : NULL;
+}
+
+size_t json_value_get_string_len(const JSON_Value *value) {
+    return json_value_get_type(value) == JSONString ? value->string_len : 0;
 }
 
 double json_value_get_number(const JSON_Value *value) {
@@ -1811,7 +1853,7 @@ JSON_Status json_object_set_value(JSON_Object *object, const char *name, JSON_Va
         }
     }
     /* add new key value pair */
-    return json_object_add(object, name, value);
+    return json_object_append(object, name, value);
 }
 
 JSON_Status json_object_set_string(JSON_Object *object, const char *name, const char *string) {
