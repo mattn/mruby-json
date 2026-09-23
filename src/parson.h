@@ -78,6 +78,9 @@ JSON_Value * json_parse_file_with_comments(const char *filename);
 /*  Parses first JSON value in a string, returns NULL in case of error */
 JSON_Value * json_parse_string(const char *string);
 
+/* Like json_parse_string, and stores where parsing stopped in end */
+JSON_Value * json_parse_string_end(const char *string, const char **end);
+
 /*  Parses first JSON value in a string and ignores comments (/ * * / and //),
     returns NULL in case of error */
 JSON_Value * json_parse_string_with_comments(const char *string);
@@ -251,6 +254,7 @@ JSON_Value_Type json_value_get_type   (const JSON_Value *value);
 JSON_Object *   json_value_get_object (const JSON_Value *value);
 JSON_Array  *   json_value_get_array  (const JSON_Value *value);
 const char  *   json_value_get_string (const JSON_Value *value);
+size_t          json_value_get_string_len(const JSON_Value *value); /* the string may hold NUL */
 double          json_value_get_number (const JSON_Value *value);
 #ifdef JSON_FIXED_NUMBER
 intmax_t        json_value_get_fixed  (const JSON_Value *value);

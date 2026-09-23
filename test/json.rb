@@ -32,7 +32,8 @@ assert('stringify object with nil value') do
   assert_equal '{"foo":null}', JSON.stringify({"foo"=> nil})
 end
 assert('stringify object with object key and float value') do
-  assert_equal '{"{\"foo\"=>\"bar\"}":1.5}', JSON.stringify({{"foo"=> "bar"}=> 1.5})
+  key = {"foo"=> "bar"}
+  assert_equal({key.to_s => 1.5}, JSON.parse(JSON.stringify({key => 1.5})))
 end
 assert('stringify empty array') do
   assert_equal "[]",  JSON.stringify([])
@@ -145,6 +146,48 @@ assert('load') do
   assert_equal({"foo"=>"bar"}, o)
 
   o = nil
-  assert_raise(JSON::ParserError) { JSON.load '{' {|x| o = x} }
+  assert_raise(JSON::ParserError) { JSON.load('{') {|x| o = x} }
   assert_equal(nil, o)
+end
+assert('parse string with NUL') do
+  assert_equal ["a\0b"], JSON.parse('["a\u0000b"]')
+end
+assert('parse duplicate keys') do
+  assert_equal({"a" => 2, "b" => 3}, JSON.parse('{"a":1,"b":3,"a":2}'))
+end
+assert('parse large integer') do
+  assert_equal [9223372036854775807, -9223372036854775808], JSON.parse('[9223372036854775807,-9223372036854775808]') if 9223372036854775807.is_a?(Integer)
+end
+assert('parse rejects trailing garbage') do
+  assert_raise(JSON::ParserError) { JSON.parse('{} x') }
+  assert_raise(JSON::ParserError) { JSON.parse('[1]]') }
+  assert_raise(JSON::ParserError) { JSON.parse("[1]\0") }
+  assert_equal [1], JSON.parse(" [1] \n")
+end
+assert('parse rejects invalid numbers') do
+  %w(01 -01 00 1. 1.e5 .5 +1 1e).each do |n|
+    assert_raise(JSON::ParserError) { JSON.parse("[#{n}]") }
+  end
+end
+assert('stringify control characters') do
+  assert_equal '["\\u001b\\u0000a"]', JSON.generate(["\e\0a"])
+end
+assert('stringify escapes keys as JSON') do
+  assert_equal '{"a\\"b#{x}\\n":1}', JSON.generate({"a\"b\#{x}\n" => 1})
+end
+assert('stringify NaN and Infinity') do
+  assert_raise(JSON::GeneratorError) { JSON.generate([0.0 / 0.0]) }
+  assert_raise(JSON::GeneratorError) { JSON.generate([1.0 / 0.0]) }
+end
+assert('stringify self-referencing array') do
+  a = []
+  a << a
+  assert_raise(JSON::NestingError) { JSON.generate(a) }
+end
+assert('stringify object with inherited to_json') do
+  class JSONParentWithToJSON
+    def to_json(*a); '"parent"'; end
+  end
+  class JSONChildWithToJSON < JSONParentWithToJSON; end
+  assert_equal '["parent"]', JSON.generate([JSONChildWithToJSON.new])
 end
